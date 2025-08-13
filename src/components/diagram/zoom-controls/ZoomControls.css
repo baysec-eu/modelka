@@ -1,0 +1,25 @@
+.zoom-controls {
+position: absolute;
+bottom: 16px;
+right: 16px;
+display: flex;
+align-items: center;
+background: rgba(255, 255, 255, 0.9);
+border-radius: 4px;
+padding: 4px;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.zoom-btn {
+background: transparent;
+border: none;
+cursor: pointer;
+font-size: 16px;
+margin: 0 4px;
+padding: 4px;
+}
+
+.zoom-level {
+font-size: 14px;
+margin: 0 4px;
+}

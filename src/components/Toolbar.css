@@ -1,0 +1,307 @@
+.toolbar {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: nowrap;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.toolbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.toolbar-section {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.toolbar-section h4 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.element-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.element-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.element-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.element-icon {
+  font-size: 1.25rem;
+}
+
+.element-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.file-buttons,
+.collab-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.toolbar-btn {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  flex-shrink: 0;
+  white-space: nowrap;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.export-dropdown {
+  position: relative;
+  z-index: 10000;
+}
+
+.export-menu {
+  position: fixed;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 150px;
+  z-index: 99999;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+}
+
+.export-dropdown:hover .export-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.export-menu button {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  color: #495057;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-size: 0.875rem;
+}
+
+.export-menu button:hover {
+  background: #f8f9fa;
+}
+
+.export-menu button:first-child {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+.export-menu button:last-child {
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+/* Hide elements section below 1100px for space */
+
+/* Responsive design - keep horizontal layout */
+@media (max-width: 1024px) {
+  .toolbar {
+    gap: 0.75rem;
+  }
+  
+  .toolbar-section {
+    gap: 0.375rem;
+  }
+  
+  .file-buttons,
+  .collab-buttons {
+    gap: 0.375rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .toolbar {
+    flex-direction: row;
+    gap: 0.25rem;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  
+  .toolbar-section {
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+  
+  .element-buttons {
+    gap: 0.25rem;
+    flex-wrap: nowrap;
+  }
+  
+  .element-btn {
+    min-width: 50px;
+    padding: 0.25rem;
+  }
+  
+  .element-icon {
+    font-size: 0.9rem;
+  }
+  
+  .element-name {
+    font-size: 0.6rem;
+  }
+  
+  .toolbar-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    min-height: 46px;
+  }
+  
+  .file-buttons,
+  .collab-buttons {
+    gap: 0.25rem;
+    flex-wrap: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .toolbar {
+    flex-direction: row;
+    gap: 0.125rem;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  
+  .toolbar-section {
+    gap: 0.125rem;
+    flex-shrink: 0;
+  }
+  
+  .element-buttons {
+    gap: 0.125rem;
+    flex-wrap: nowrap;
+  }
+  
+  .element-btn {
+    min-width: 45px;
+    padding: 0.2rem;
+  }
+  
+  .element-icon {
+    font-size: 0.8rem;
+  }
+  
+  .element-name {
+    font-size: 0.55rem;
+  }
+  
+  .toolbar-btn {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.65rem;
+    min-height: 42px;
+  }
+  
+  .file-buttons,
+  .collab-buttons {
+    gap: 0.125rem;
+    flex-wrap: nowrap;
+  }
+}
+
+.connection-controls {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.connection-btn {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.connection-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.connection-btn.active {
+  background: rgba(40, 167, 69, 0.2);
+  border-color: #28a745;
+  color: #28a745;
+}
+
+.connection-btn.active:hover {
+  background: rgba(40, 167, 69, 0.3);
+}
+
+.connection-hint {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  padding: 0.25rem;
+  background: rgba(255, 193, 7, 0.1);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}

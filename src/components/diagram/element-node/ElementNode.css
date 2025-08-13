@@ -1,0 +1,12 @@
+.context-menu-item:hover {
+background-color: #f0f0f0;
+}
+
+.element-node {
+/* no fixed styles; elements inherit stroke and fill from Konva props */
+}
+
+/* Add hover effect for ElementNode if needed */
+.element-node:hover {
+cursor: pointer;
+}

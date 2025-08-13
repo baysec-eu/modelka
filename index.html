@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/shield.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Baysec Modelka - Collaborative Threat Modeling</title>
+    <meta name="description" content="Serverless collaborative threat modeling tool with real-time WebRTC synchronization" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Modelka - Collaborative Threat Modeling" />
+    <meta property="og:description" content="Serverless collaborative threat modeling tool with real-time WebRTC synchronization" />
+    <meta property="og:image" content="/modelka-preview.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="Modelka - Collaborative Threat Modeling" />
+    <meta property="twitter:description" content="Serverless collaborative threat modeling tool with real-time WebRTC synchronization" />
+    <meta property="twitter:image" content="/modelka-preview.png" />
+
+    <!-- Theme and styling -->
+    <meta name="theme-color" content="#var(--primary-color)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    
+    <style>
+      /* Loading screen */
+      #loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #var(--primary-color) 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: white;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        z-index: 9999;
+      }
+      
+      #loading h1 {
+        font-size: 3rem;
+        margin: 0 0 1rem 0;
+        font-weight: 700;
+      }
+      
+      #loading p {
+        font-size: 1.2rem;
+        margin: 0;
+        opacity: 0.8;
+      }
+      
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top: 4px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-top: 2rem;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
