@@ -230,10 +230,19 @@ export class StorageService {
    */
   saveState(roomId: string, state: any): boolean {
     try {
-      const key = `room_state_${roomId}`;
-      const serialized = JSON.stringify(state);
+      const key = `modelka_room_${roomId}_state`;
+      
+      // Enhance state with metadata for integrity checking
+      const enhancedState = {
+        ...state,
+        savedAt: Date.now(),
+        version: state.version || 1,
+        checksum: this.generateChecksum(JSON.stringify(state)),
+      };
+      
+      const serialized = JSON.stringify(enhancedState);
       localStorage.setItem(key, serialized);
-      console.log(`💾 Saved state for room ${roomId}:`, Object.keys(state));
+      console.log(`💾 Saved state for room ${roomId}:`, Object.keys(state), `(${state.elements?.length || 0} elements)`);
       return true;
     } catch (error) {
       console.error(`Failed to save state for room ${roomId}:`, error);
@@ -246,17 +255,37 @@ export class StorageService {
    */
   loadState(roomId: string): any {
     try {
-      const key = `room_state_${roomId}`;
+      const key = `modelka_room_${roomId}_state`;
       const serialized = localStorage.getItem(key);
       if (!serialized) {
         return null;
       }
+      
       const state = JSON.parse(serialized);
-      console.log(`📂 Loaded state for room ${roomId}:`, Object.keys(state));
+      
+      // Validate checksum if available
+      if (state.checksum) {
+        const { checksum, savedAt, ...stateWithoutMeta } = state;
+        const expectedChecksum = this.generateChecksum(JSON.stringify(stateWithoutMeta));
+        
+        if (checksum !== expectedChecksum) {
+          console.error(`Checksum validation failed for room ${roomId}. Data may be corrupted.`);
+          return null;
+        }
+      }
+      
+      console.log(`📂 Loaded state for room ${roomId}:`, Object.keys(state), `(${state.elements?.length || 0} elements)`);
       return state;
     } catch (error) {
       console.error(`Failed to load state for room ${roomId}:`, error);
       return null;
     }
+  }
+
+  /**
+   * Generate simple checksum for data integrity (private method made available)
+   */
+  private generateChecksum(data: string): string {
+    return StorageService.generateChecksum(data);
   }
 }

@@ -46,3 +46,4 @@ dist-ssr
 build/
 .next/
 out/
+.vercel

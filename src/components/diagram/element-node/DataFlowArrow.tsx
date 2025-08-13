@@ -161,6 +161,8 @@ export const DataFlowArrow: React.FC<DataFlowArrowProps> = ({ flow, elements, se
       return;
     }
 
+    console.log('🎯 DataFlow reattachment: drag ended at', draggedPos);
+
     // Find target element under the dragged endpoint
     const targetElements = elements.filter(el => 
       el.type !== 'data-flow' && 
@@ -191,11 +193,15 @@ export const DataFlowArrow: React.FC<DataFlowArrowProps> = ({ flow, elements, se
         } else {
           newTargetOffset = Math.max(0.1, Math.min(0.9, (draggedPos.y - y) / height));
         }
+        
+        console.log(`🔗 Found target: ${element.id} on edge ${newTargetEdge} at offset ${newTargetOffset}`);
         break;
       }
     }
 
     if (newTargetElement) {
+      console.log(`🔄 Reattaching ${dragState.endpoint} endpoint to ${newTargetElement.id}`);
+      
       // Reattach to new element
       if (dragState.endpoint === 'source') {
         onReattach(
@@ -218,6 +224,8 @@ export const DataFlowArrow: React.FC<DataFlowArrowProps> = ({ flow, elements, se
           newTargetOffset
         );
       }
+    } else {
+      console.log('❌ No valid target found for reattachment');
     }
 
     setDragState(null);
@@ -251,7 +259,9 @@ export const DataFlowArrow: React.FC<DataFlowArrowProps> = ({ flow, elements, se
             onDragStart={() => handleEndpointDragStart('source', { x: startX, y: startY })}
             onDragEnd={(e) => {
               const pos = e.target.position();
-              handleEndpointDragEnd({ x: pos.x + startX, y: pos.y + startY });
+              const absolutePos = { x: startX + pos.x, y: startY + pos.y };
+              console.log('🎯 Source endpoint dragged to:', absolutePos);
+              handleEndpointDragEnd(absolutePos);
               e.target.position({ x: 0, y: 0 }); // Reset position
             }}
             onMouseEnter={(e) => {
@@ -280,7 +290,9 @@ export const DataFlowArrow: React.FC<DataFlowArrowProps> = ({ flow, elements, se
             onDragStart={() => handleEndpointDragStart('target', { x: endX, y: endY })}
             onDragEnd={(e) => {
               const pos = e.target.position();
-              handleEndpointDragEnd({ x: pos.x + endX, y: pos.y + endY });
+              const absolutePos = { x: endX + pos.x, y: endY + pos.y };
+              console.log('🎯 Target endpoint dragged to:', absolutePos);
+              handleEndpointDragEnd(absolutePos);
               e.target.position({ x: 0, y: 0 }); // Reset position
             }}
             onMouseEnter={(e) => {

@@ -122,6 +122,8 @@ export class DistributedStateManager {
     checksum: '',
   };
   
+  // Operation queue for solo mode - "dam pattern" 
+  private pendingOperations: OTOperationMeta[] = [];
   
   // Event handling
   private eventListeners: Set<(event: DistributedStateEvent) => void> = new Set();
@@ -171,8 +173,6 @@ export class DistributedStateManager {
    * Initialize distributed system for a room
    */
   async initializeRoom(userId: string, roomId: string): Promise<Session> {
-    this.userId = userId;
-    
     // Clear any existing state to prevent room cross-contamination
     console.log(`🧹 Clearing state before initializing room: ${roomId} (previous room: ${this.stats.currentRoom || 'none'})`);
     
@@ -183,6 +183,13 @@ export class DistributedStateManager {
     }
     
     this.clearCurrentState();
+    
+    // Set userId AFTER cleanup to ensure it's not cleared
+    this.userId = userId;
+    console.log(`👤 Set userId: ${userId} for room: ${roomId}`);
+    
+    // Load room state from localStorage immediately for solo mode
+    await this.loadRoomState(roomId);
     
     // Initialize core components (but don't initialize Raft consensus until WebRTC is ready)
     this.sessionManager = new SessionManager();
@@ -225,7 +232,7 @@ export class DistributedStateManager {
   }
   
   /**
-   * Connect to WebRTC network
+   * Connect to WebRTC network - "Open the floodgates"
    */
   async connect(rtc: ServerlessWebRTC, userId: string): Promise<void> {
     this.rtc = rtc;
@@ -241,6 +248,9 @@ export class DistributedStateManager {
     this.isConnected = true;
     this.stats.isConnected = true;
     
+    // 🌊 "Open the floodgates" - Flush all pending operations to peers
+    await this.flushPendingOperations();
+    
     this.emitEvent({ 
       type: 'connection_status_changed', 
       isConnected: true, 
@@ -249,13 +259,51 @@ export class DistributedStateManager {
   }
   
   /**
+   * Flush all pending operations to peers when P2P is enabled
+   * "Opening the dam" - all accumulated changes flow to peers
+   */
+  private async flushPendingOperations(): Promise<void> {
+    if (this.pendingOperations.length === 0) {
+      console.log('🌊 No pending operations to flush');
+      return;
+    }
+    
+    console.log(`🌊 OPENING FLOODGATES: Flushing ${this.pendingOperations.length} pending operations to peers`);
+    
+    // Send current state snapshot to peers first for consistency
+    if (this.rtc) {
+      const snapshot = {
+        snapshot: this.currentState,
+        version: this.stats.eventsStored,
+        pendingOperationsCount: this.pendingOperations.length
+      };
+      
+      console.log('📤 Broadcasting complete state snapshot to peers');
+      this.rtc.send('full_history', snapshot);
+    }
+    
+    // Then broadcast each operation for operation-level sync
+    for (const operation of this.pendingOperations) {
+      console.log(`🌊 Flushing operation: ${operation.operation.type}`);
+      this.broadcastOperationToPeers(operation);
+    }
+    
+    // Clear the pending operations queue after flushing
+    const flushedCount = this.pendingOperations.length;
+    this.pendingOperations = [];
+    
+    console.log(`✅ Flushed ${flushedCount} operations to peers - dam is now open`);
+  }
+  
+  /**
    * Create a new diagram element
    */
   async createElement(element: DiagramElement): Promise<boolean> {
-    // Allow creation even when not connected (offline/single-user mode)
+    // Ensure userId is always available - generate fallback if missing
     if (!this.userId) {
-      console.warn('No userId available for create operation');
-      return false;
+      console.warn('⚠️ No userId available, generating fallback userId for solo mode');
+      this.userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+      console.log(`👤 Generated fallback userId: ${this.userId}`);
     }
     
     // Increment vector clock
@@ -285,10 +333,11 @@ export class DistributedStateManager {
    * Update diagram element
    */
   async updateElement(elementId: string, updates: Partial<DiagramElement>): Promise<boolean> {
-    // Allow updates even when not connected (offline/single-user mode)
+    // Ensure userId is always available - generate fallback if missing
     if (!this.userId) {
-      console.warn('No userId available for update operation');
-      return false;
+      console.warn('⚠️ No userId available for update operation, generating fallback userId');
+      this.userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+      console.log(`👤 Generated fallback userId: ${this.userId}`);
     }
     
     const currentElement = this.currentState.elements[elementId];
@@ -337,10 +386,11 @@ export class DistributedStateManager {
    * Delete diagram element
    */
   async deleteElement(elementId: string): Promise<boolean> {
-    // Allow deletion even when not connected (offline/single-user mode)  
+    // Ensure userId is always available - generate fallback if missing
     if (!this.userId) {
-      console.warn('No userId available for delete operation');
-      return false;
+      console.warn('⚠️ No userId available for delete operation, generating fallback userId');
+      this.userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+      console.log(`👤 Generated fallback userId: ${this.userId}`);
     }
     
     const element = this.currentState.elements[elementId];
@@ -401,13 +451,35 @@ export class DistributedStateManager {
   }
   
   /**
-   * Submit operation through Raft consensus
+   * Submit operation through Raft consensus or queue for solo mode
    */
   private async submitOperation(operation: OTOperationMeta | undefined): Promise<boolean> {
-    if (!this.raftConsensus || !operation) return false;
+    if (!operation) return false;
     
     try {
       const start = Date.now();
+      
+      // Solo mode: Queue operations locally ("dam pattern")
+      if (!this.isConnected || !this.raftConsensus) {
+        console.log('🏠 Solo mode: Queuing operation locally', operation.operation.type);
+        
+        // Apply to local state immediately for UI responsiveness
+        this.applyOperationToState(operation);
+        
+        // Add to pending operations queue for later P2P sync
+        this.pendingOperations.push(operation);
+        
+        // Use debounced auto-save
+        this.autoSaveDebounced();
+        
+        // Emit UI update
+        this.emitStateUpdate();
+        
+        this.stats.operationsApplied++;
+        return true;
+      }
+      
+      // P2P mode: Submit through Raft consensus
       const success = await this.raftConsensus.submitOperation(operation);
       const duration = Date.now() - start;
       
@@ -417,7 +489,9 @@ export class DistributedStateManager {
       if (success) {
         this.stats.operationsApplied++;
         this.applyOperationToState(operation);
-        this.persistCurrentState();
+        
+        // Use debounced auto-save instead of immediate persist
+        this.autoSaveDebounced();
         
         // Emit UI update for local operations too
         this.emitStateUpdate();
@@ -760,6 +834,10 @@ export class DistributedStateManager {
       checksum: '',
     };
     
+    // Clear pending operations queue (close the dam)
+    console.log(`🚰 Clearing ${this.pendingOperations.length} pending operations`);
+    this.pendingOperations = [];
+    
     // Reset vector clock for new room
     this.vectorClock = { [this.nodeId]: 0 };
     
@@ -918,21 +996,43 @@ export class DistributedStateManager {
   }
   
   /**
-   * Persist current state to storage
+   * Persist current state to storage with auto-save debouncing
    */
+  private autoSaveTimeout: number | null = null;
+
   private persistCurrentState(): void {
     try {
-      this.storageService.saveState(this.stats.currentRoom!, {
+      if (!this.stats.currentRoom) {
+        console.warn('Cannot persist state: no current room');
+        return;
+      }
+
+      this.storageService.saveState(this.stats.currentRoom, {
         elements: Object.values(this.currentState.elements),
         threatActors: Object.values(this.currentState.threatActors),
         timestamp: Date.now(),
         version: this.currentState.version,
+        roomId: this.stats.currentRoom,
       });
       
       this.stats.eventsStored++;
+      console.log(`💾 State persisted for room ${this.stats.currentRoom}`);
     } catch (error) {
       console.error('Failed to persist state:', error);
     }
+  }
+
+  /**
+   * Auto-save with debouncing to prevent excessive localStorage writes
+   */
+  private autoSaveDebounced(): void {
+    if (this.autoSaveTimeout) {
+      clearTimeout(this.autoSaveTimeout);
+    }
+    
+    this.autoSaveTimeout = setTimeout(() => {
+      this.persistCurrentState();
+    }, 2000) as any; // 2 second debounce
   }
   
   /**
@@ -1026,6 +1126,32 @@ export class DistributedStateManager {
   }
   
   /**
+   * Disconnect from P2P mode and return to solo mode ("Close the floodgates")
+   */
+  disconnect(): void {
+    console.log('🚰 Disconnecting from P2P - closing floodgates, returning to solo mode');
+    
+    // Keep current state and userId - only disconnect from P2P
+    this.isConnected = false;
+    this.stats.isConnected = false;
+    this.stats.connectedPeers = 0;
+    
+    // Clear P2P components but keep state
+    this.rtc = null;
+    if (this.raftConsensus) this.raftConsensus.shutdown();
+    if (this.peerLifecycle) this.peerLifecycle.shutdown();
+    
+    // Reset to solo mode - operations will be queued again
+    console.log('🏠 Back to solo mode - operations will be queued locally again');
+    
+    this.emitEvent({ 
+      type: 'connection_status_changed', 
+      isConnected: false, 
+      peerCount: 0 
+    });
+  }
+
+  /**
    * Dispose of all resources and clean up for room switching
    */
   dispose(): void {
@@ -1033,6 +1159,12 @@ export class DistributedStateManager {
     
     // Clear current state completely
     this.clearCurrentState();
+    
+    // Clear auto-save timeout
+    if (this.autoSaveTimeout) {
+      clearTimeout(this.autoSaveTimeout);
+      this.autoSaveTimeout = null;
+    }
     
     // Reset all flags
     this.isConnected = false;
@@ -1052,7 +1184,8 @@ export class DistributedStateManager {
     this.stats.currentRoom = null;
     this.stats.currentSession = null;
     
-    console.log('✅ Distributed state manager disposed');
+    // DO NOT clear userId here - it will be set after dispose in initializeRoom
+    console.log('✅ Distributed state manager disposed (userId preserved)');
   }
   
   /**

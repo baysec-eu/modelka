@@ -98,7 +98,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             onMouseEnter={handleExportButtonMouseEnter}
           >
             <button className="toolbar-btn export-btn">
-              📤 Export ▼
+              📤 Export
             </button>
             <div ref={exportMenuRef} className="export-menu">
               <button onClick={() => handleExportClick('png')}>

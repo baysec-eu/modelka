@@ -144,6 +144,14 @@ export const useApplicationStore = create<ApplicationStore>((set, get) => ({
         await get().initializeP2PServices(config, stateMachine);
       } else {
         console.log('🔒 Going to private mode immediately...');
+        
+        // CRITICAL FIX: Initialize distributed state for private mode
+        if (distributedState) {
+          console.log('🏠 Initializing distributed state for solo mode...');
+          await distributedState.initializeRoom(config.userId, config.roomId);
+          console.log('✅ Distributed state ready for solo mode');
+        }
+        
         await stateMachine.transition('P2P_DISABLED');
         console.log('✅ Private mode ready');
       }

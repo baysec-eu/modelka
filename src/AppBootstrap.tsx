@@ -140,18 +140,35 @@ export default function AppBootstrap() {
       try {
         const state = diagram.exportDiagram();
         
-        // Create enhanced export data with metadata
+        // Create enhanced export data with complete position and connection info
         const exportData = {
-          version: '2.0',
+          version: '2.1', // Bumped version for enhanced position preservation
           exportedAt: new Date().toISOString(),
           exportedBy: userId,
           roomId: roomConfig.roomId,
           metadata: {
             elementCount: state.elements.length,
             threatActorCount: state.threatActors.length,
-            appVersion: 'Modelka 2.0'
+            appVersion: 'Modelka 2.1',
+            preservesPositions: true,
+            preservesConnections: true,
           },
-          elements: state.elements,
+          // Ensure all position and connection data is preserved
+          elements: state.elements.map(el => ({
+            ...el,
+            // Explicitly preserve position and size
+            position: { x: el.position.x, y: el.position.y },
+            size: { width: el.size.width, height: el.size.height },
+            // For data flows, preserve all connection metadata
+            ...(el.type === 'data-flow' && {
+              sourceId: el.sourceId,
+              targetId: el.targetId,
+              sourceEdge: el.sourceEdge,
+              targetEdge: el.targetEdge,
+              sourceEdgeOffset: el.sourceEdgeOffset,
+              targetEdgeOffset: el.targetEdgeOffset,
+            }),
+          })),
           threatActors: state.threatActors,
         };
 
@@ -267,7 +284,30 @@ export default function AppBootstrap() {
           throw new Error('Invalid file format: threatActors must be an array');
         }
 
+        // Validate position data preservation for enhanced imports
+        const hasPositionData = elements.every(el => 
+          el.position && typeof el.position.x === 'number' && typeof el.position.y === 'number' &&
+          el.size && typeof el.size.width === 'number' && typeof el.size.height === 'number'
+        );
+
+        if (!hasPositionData) {
+          console.warn('⚠️ Import file missing complete position data - elements may not appear in original positions');
+        }
+
+        // Validate data flow connection preservation
+        const dataFlows = elements.filter(el => el.type === 'data-flow');
+        const hasConnectionData = dataFlows.every(flow => 
+          flow.sourceId && flow.targetId &&
+          typeof flow.sourceEdge === 'string' && typeof flow.targetEdge === 'string'
+        );
+
+        if (dataFlows.length > 0 && !hasConnectionData) {
+          console.warn('⚠️ Import file missing connection data - data flows may not reconnect properly');
+        }
+
         console.log(`📥 Importing ${elements.length} elements and ${threatActors.length} threat actors...`);
+        console.log(`🎯 Position preservation: ${hasPositionData ? 'ENABLED' : 'LIMITED'}`);
+        console.log(`🔗 Connection preservation: ${hasConnectionData ? 'ENABLED' : 'LIMITED'}`);
 
         // Import with confirmation for non-empty diagrams
         if (diagram.elements.length > 0 || diagram.threatActors.length > 0) {
