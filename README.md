@@ -1,5 +1,7 @@
 # 🛡️ Modelka – Collaborative Threat Modeling
 
+![Modelka](./public/modelka.jpg)
+
 **Modelka** is a lightweight tool for creating and collaborating on STRIDE threat models in real time via P2P — no servers, no sign-ups, no data storage. Just share a link and start modeling securely with your team.
 
 ## ✨ Highlights
