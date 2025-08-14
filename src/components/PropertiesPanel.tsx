@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { DiagramElement, Threat, SecurityControl, Technology, ThreatSeverity, SEVERITY_LEVELS, STRIDE_CATEGORIES, Asset } from '../types/diagram';
-import { ThreatAPI } from '../services/threatAPI';
 import './PropertiesPanel.css';
 
 interface PropertiesPanelProps {
@@ -17,7 +16,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   onElementDelete
 }) => {
   const [activeTab, setActiveTab] = useState<'basic' | 'threats' | 'technologies' | 'assets'>('basic');
-  const [availableThreats, setAvailableThreats] = useState<Threat[]>([]);
 
   const handleBasicUpdate = (field: keyof DiagramElement, value: any) => {
     const updated = { ...element, [field]: value };
@@ -39,8 +37,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     
     onElementUpdate(updated);
     
-    // Load threats for this technology
-    loadThreatsForTechnology(newTech);
   };
 
   const handleTechnologyUpdate = (techId: string, field: keyof Technology, value: any) => {
@@ -51,36 +47,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       )
     };
     onElementUpdate(updated);
-    
-    // Reload threats if category or name changed
-    if (field === 'category' || field === 'name') {
-      const tech = updated.technologies.find(t => t.id === techId);
-      if (tech) {
-        loadThreatsForTechnology(tech);
-      }
-    }
-  };
-
-  const loadThreatsForTechnology = async (technology: Technology) => {
-    try {
-      const threats = await ThreatAPI.getThreatsForTechnology(technology.name, technology.category);
-      setAvailableThreats(threats);
-    } catch (error) {
-      console.error('Failed to load threats:', error);
-    }
-  };
-
-  const handleAddThreat = (threat: Threat) => {
-    const newThreat: Threat = {
-      ...threat,
-      id: `threat-${Date.now()}`,
-      controls: []
-    };
-    
-    const updatedThreats = [...(element.threats || []), newThreat];
-    const updated = { ...element, threats: updatedThreats };
-    onElementUpdate(updated);
-    onThreatUpdate(element.id, updatedThreats);
   };
 
   const handleAddDirectThreat = () => {
@@ -313,40 +279,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </select>
           </div>
 
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => loadThreatsForTechnology(tech)}
-          >
-            📊 Load Threats
-          </button>
+
         </div>
       ))}
 
-      {availableThreats.length > 0 && (
-        <div className="available-threats">
-          <h4>Available Threats</h4>
-          {availableThreats.map((threat) => (
-            <div key={threat.id} className="threat-suggestion">
-              <div className="threat-info">
-                <strong>{threat.title}</strong>
-                <span className={`severity-badge severity-${threat.severity}`}>
-                  {SEVERITY_LEVELS[threat.severity].name}
-                </span>
-                <span className="stride-badge">
-                  {STRIDE_CATEGORIES[threat.strideCategory].icon} {STRIDE_CATEGORIES[threat.strideCategory].name}
-                </span>
-              </div>
-              <p>{threat.description}</p>
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={() => handleAddThreat(threat)}
-              >
-                + Add Threat
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+
     </div>
   );
 
